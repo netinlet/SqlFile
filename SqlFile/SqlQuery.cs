@@ -13,6 +13,7 @@ public abstract class SqlQuery<T>
 {
     private readonly Dictionary<string, string> _templates = new();
     private static readonly Regex _templateFields = new(@"\{\{(\w+)\}\}", RegexOptions.Compiled);
+    private IReadOnlyList<string>? _templateFieldsCache;
 
     public SqlQuery<T> With(string name, string value)
     {
@@ -28,7 +29,7 @@ public abstract class SqlQuery<T>
     }
 
     public IReadOnlyList<string> TemplateFields =>
-        _templateFields
+        _templateFieldsCache ??= _templateFields
             .Matches(SqlCache.Cache.GetOrAdd(GetType(), LoadSqlFromResource))
             .Select(m => m.Groups[1].Value)
             .Distinct()
