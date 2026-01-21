@@ -1,0 +1,43 @@
+# Build
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+# IDE - Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.csproj.user
+
+# IDE - JetBrains Rider
+.idea/
+
+# NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test
+TestResults/
+[Cc]overage/
+*.coverage
+*.coveragexml
+
+# Build artifacts
+publish/
+*.dll
+*.exe
+*.pdb
+!**/runtimes/**/*.dll
+
+# Misc
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
