@@ -170,12 +170,14 @@ public class SqlQueryTests : IDisposable
     [Fact]
     public async Task WithParam_CombinesWithPositionalParams()
     {
-        // GetCustomers uses {0} for region, we add a named param
-        var query = new GetCustomers();
+        // MixedParamQuery uses {0} for region and {{namePattern}} for name filter
+        var query = new MixedParamQuery()
+            .WithParam("namePattern", "A%");
 
         var results = await query.ExecuteAsync(_db, "West");
 
-        Assert.Equal(2, results.Count);
+        Assert.Single(results);
+        Assert.Equal("Alice", results[0].Name);
     }
 
     [Fact]

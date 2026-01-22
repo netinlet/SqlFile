@@ -79,13 +79,15 @@ Use `WithLiteral` for structural SQL parts that cannot be parameterized (column 
 -- SearchCustomers.sql
 SELECT Id, Name, Region
 FROM Customers
-WHERE {{filter}}
+WHERE {{activeFilter}}
+  AND {{regionFilter}}
 ORDER BY {{sortColumn}}
 ```
 
 ```csharp
 var customers = await new SearchCustomers()
-    .WithLiteral("filter", "IsActive = 1")
+    .WithLiteral("activeFilter", "IsActive = 1")
+    .WithLiteral("regionFilter", "Region = 'West'")
     .WithLiteral("sortColumn", "Name DESC")
     .ExecuteAsync(dbContext);
 ```
@@ -140,7 +142,7 @@ Use `TemplateFields` to discover placeholders in a query:
 ```csharp
 var query = new SearchCustomers();
 Console.WriteLine(string.Join(", ", query.TemplateFields));
-// Output: filter, sortColumn
+// Output: activeFilter, regionFilter, sortColumn
 ```
 
 ## File Nesting
