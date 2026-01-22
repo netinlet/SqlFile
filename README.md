@@ -73,7 +73,7 @@ var customers = await new FilterCustomers()
 
 ## Literal Substitution (Structural)
 
-Use `WithLiteral` (or its alias `WithRaw`) for structural SQL parts that cannot be parameterized (column names, sort orders, complex expressions):
+Use `WithLiteral` for structural SQL parts that cannot be parameterized (column names, sort orders, complex expressions):
 
 ```sql
 -- SearchCustomers.sql
@@ -164,8 +164,6 @@ Queries/
 | `WithParam(string name, object value)` | Set a parameterized value (SQL-injection safe). Returns `this` for chaining. |
 | `WithParams(IEnumerable<KeyValuePair<string, object>>)` | Set multiple parameterized values. Returns `this` for chaining. |
 | `WithLiteral(string name, string value)` | Set a literal substitution value. Returns `this` for chaining. |
-| `WithRaw(string name, string value)` | Alias for `WithLiteral`. |
 | `WithLiterals(IEnumerable<KeyValuePair<string, string>>)` | Set multiple literal values. Returns `this` for chaining. |
-| `WithRaws(IEnumerable<KeyValuePair<string, string>>)` | Alias for `WithLiterals`. |
 | `TemplateFields` | `IReadOnlyList<string>` of placeholder names found in the SQL file. |
 | `ExecuteAsync(DbContext db, params object[] parameters)` | Execute the query and return `List<T>`. Positional parameters use EF Core's `{0}`, `{1}` syntax. |

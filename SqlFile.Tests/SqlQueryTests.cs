@@ -195,19 +195,6 @@ public class SqlQueryTests : IDisposable
         Assert.Equal("Bob", results[0].Name);
     }
 
-    [Fact]
-    public async Task WithRaw_IsAliasForWithLiteral()
-    {
-        var query = new SearchCustomers()
-            .WithRaw("activeFilter", "1=1")
-            .WithRaw("regionFilter", "Region = 'West'")
-            .WithRaw("sortColumn", "Name");
-
-        var results = await query.ExecuteAsync(_db);
-
-        Assert.Equal(2, results.Count);
-    }
-
     public void Dispose()
     {
         _db.Dispose();

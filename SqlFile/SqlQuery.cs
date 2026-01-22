@@ -22,16 +22,12 @@ public abstract class SqlQuery<T>
         return this;
     }
 
-    public SqlQuery<T> WithRaw(string name, string value) => WithLiteral(name, value);
-
     public SqlQuery<T> WithLiterals(IEnumerable<KeyValuePair<string, string>> literals)
     {
         foreach (var kv in literals)
             _literals[kv.Key] = kv.Value;
         return this;
     }
-
-    public SqlQuery<T> WithRaws(IEnumerable<KeyValuePair<string, string>> literals) => WithLiterals(literals);
 
     public SqlQuery<T> WithParam(string name, object value)
     {
