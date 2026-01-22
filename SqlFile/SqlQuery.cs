@@ -11,20 +11,38 @@ file static class SqlCache
 
 public abstract class SqlQuery<T>
 {
-    private readonly Dictionary<string, string> _templates = new();
+    private readonly Dictionary<string, string> _literals = new();
+    private readonly Dictionary<string, object> _params = new();
     private static readonly Regex _templateFields = new(@"\{\{(\w+)\}\}", RegexOptions.Compiled);
     private IReadOnlyList<string>? _templateFieldsCache;
 
-    public SqlQuery<T> With(string name, string value)
+    public SqlQuery<T> WithLiteral(string name, string value)
     {
-        _templates[name] = value;
+        _literals[name] = value;
         return this;
     }
 
-    public SqlQuery<T> With(IEnumerable<KeyValuePair<string, string>> templates)
+    public SqlQuery<T> WithRaw(string name, string value) => WithLiteral(name, value);
+
+    public SqlQuery<T> WithLiterals(IEnumerable<KeyValuePair<string, string>> literals)
     {
-        foreach (var kv in templates)
-            _templates[kv.Key] = kv.Value;
+        foreach (var kv in literals)
+            _literals[kv.Key] = kv.Value;
+        return this;
+    }
+
+    public SqlQuery<T> WithRaws(IEnumerable<KeyValuePair<string, string>> literals) => WithLiterals(literals);
+
+    public SqlQuery<T> WithParam(string name, object value)
+    {
+        _params[name] = value;
+        return this;
+    }
+
+    public SqlQuery<T> WithParams(IEnumerable<KeyValuePair<string, object>> parameters)
+    {
+        foreach (var kv in parameters)
+            _params[kv.Key] = kv.Value;
         return this;
     }
 
@@ -38,8 +56,41 @@ public abstract class SqlQuery<T>
     public async Task<List<T>> ExecuteAsync(DbContext db, params object[] parameters)
     {
         var sql = SqlCache.Cache.GetOrAdd(GetType(), LoadSqlFromResource);
-        var interpolated = _templates.Aggregate(sql, (s, kv) => s.Replace($"{{{{{kv.Key}}}}}", kv.Value));
-        return await db.Database.SqlQueryRaw<T>(interpolated, parameters).ToListAsync();
+
+        // Apply literal substitutions first
+        var interpolated = _literals.Aggregate(sql, (s, kv) => s.Replace($"{{{{{kv.Key}}}}}", kv.Value));
+
+        // Find remaining {{param}} placeholders that have values in _params
+        var remainingPlaceholders = _templateFields.Matches(interpolated)
+            .Select(m => m.Groups[1].Value)
+            .Distinct()
+            .Where(name => _params.ContainsKey(name))
+            .ToList();
+
+        if (remainingPlaceholders.Count == 0)
+            return await db.Database.SqlQueryRaw<T>(interpolated, parameters).ToListAsync();
+
+        // Find max existing positional parameter index
+        var maxIndex = Regex.Matches(interpolated, @"\{(\d+)\}")
+            .Select(m => int.Parse(m.Groups[1].Value))
+            .DefaultIfEmpty(-1)
+            .Max();
+
+        // Assign indices to named params and replace {{param}} with {N}
+        var paramIndex = maxIndex + 1;
+        var paramValues = new List<object>();
+        foreach (var name in remainingPlaceholders)
+        {
+            interpolated = interpolated.Replace($"{{{{{name}}}}}", $"{{{paramIndex++}}}");
+            paramValues.Add(_params[name]);
+        }
+
+        // Combine original parameters with named param values
+        var allArgs = new object[parameters.Length + paramValues.Count];
+        parameters.CopyTo(allArgs, 0);
+        paramValues.CopyTo(allArgs, parameters.Length);
+
+        return await db.Database.SqlQueryRaw<T>(interpolated, allArgs).ToListAsync();
     }
 
     private static string LoadSqlFromResource(Type type)

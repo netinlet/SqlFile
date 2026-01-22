@@ -62,12 +62,12 @@ public class SqlQueryTests : IDisposable
     }
 
     [Fact]
-    public async Task ExecuteAsync_WithTemplateReplacement_ReturnsResults()
+    public async Task ExecuteAsync_WithLiteralReplacement_ReturnsResults()
     {
         var query = new SearchCustomers()
-            .With("activeFilter", "1=1")
-            .With("regionFilter", "Region = 'West'")
-            .With("sortColumn", "Name");
+            .WithLiteral("activeFilter", "1=1")
+            .WithLiteral("regionFilter", "Region = 'West'")
+            .WithLiteral("sortColumn", "Name");
 
         var results = await query.ExecuteAsync(_db);
 
@@ -87,13 +87,13 @@ public class SqlQueryTests : IDisposable
     }
 
     [Fact]
-    public async Task With_IsChainable()
+    public async Task WithLiteral_IsChainable()
     {
         var query = new SearchCustomers()
-            .With("activeFilter", "1=1")
-            .With("regionFilter", "1=1")
-            .With("sortColumn", "Id")
-            .With("sortColumn", "Name DESC");
+            .WithLiteral("activeFilter", "1=1")
+            .WithLiteral("regionFilter", "1=1")
+            .WithLiteral("sortColumn", "Id")
+            .WithLiteral("sortColumn", "Name DESC");
 
         var results = await query.ExecuteAsync(_db);
 
@@ -102,7 +102,7 @@ public class SqlQueryTests : IDisposable
     }
 
     [Fact]
-    public async Task With_AcceptsDictionary()
+    public async Task WithLiterals_AcceptsDictionary()
     {
         var templates = new Dictionary<string, string>
         {
@@ -112,7 +112,7 @@ public class SqlQueryTests : IDisposable
         };
 
         var results = await new SearchCustomers()
-            .With(templates)
+            .WithLiterals(templates)
             .ExecuteAsync(_db);
 
         Assert.Single(results);
@@ -151,6 +151,61 @@ public class SqlQueryTests : IDisposable
             () => query.ExecuteAsync(_db));
 
         Assert.Contains("not found", ex.Message);
+    }
+
+    [Fact]
+    public async Task WithParam_UsesParameterizedQuery()
+    {
+        var query = new FilterCustomers()
+            .WithParam("region", "West")
+            .WithLiteral("sortColumn", "Name");
+
+        var results = await query.ExecuteAsync(_db);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal("Alice", results[0].Name);
+        Assert.Equal("Charlie", results[1].Name);
+    }
+
+    [Fact]
+    public async Task WithParam_CombinesWithPositionalParams()
+    {
+        // GetCustomers uses {0} for region, we add a named param
+        var query = new GetCustomers();
+
+        var results = await query.ExecuteAsync(_db, "West");
+
+        Assert.Equal(2, results.Count);
+    }
+
+    [Fact]
+    public async Task WithParams_AcceptsDictionary()
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            ["region"] = "East"
+        };
+
+        var results = await new FilterCustomers()
+            .WithParams(parameters)
+            .WithLiteral("sortColumn", "Id")
+            .ExecuteAsync(_db);
+
+        Assert.Single(results);
+        Assert.Equal("Bob", results[0].Name);
+    }
+
+    [Fact]
+    public async Task WithRaw_IsAliasForWithLiteral()
+    {
+        var query = new SearchCustomers()
+            .WithRaw("activeFilter", "1=1")
+            .WithRaw("regionFilter", "Region = 'West'")
+            .WithRaw("sortColumn", "Name");
+
+        var results = await query.ExecuteAsync(_db);
+
+        Assert.Equal(2, results.Count);
     }
 
     public void Dispose()
