@@ -171,13 +171,13 @@ public class SqlQueryTests : IDisposable
     public async Task WithParam_CombinesWithPositionalParams()
     {
         // MixedParamQuery uses {0} for region and {{namePattern}} for name filter
-        var query = new MixedParamQuery()
-            .WithParam("namePattern", "A%");
-
-        var results = await query.ExecuteAsync(_db, "West");
+        var results = await new MixedParamQuery()
+            .WithParam("namePattern", "A%")
+            .ExecuteAsync(_db, "West");
 
         Assert.Single(results);
         Assert.Equal("Alice", results[0].Name);
+        Assert.Equal("West", results[0].Region);
     }
 
     [Fact]
