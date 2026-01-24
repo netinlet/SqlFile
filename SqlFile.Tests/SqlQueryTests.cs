@@ -197,6 +197,18 @@ public class SqlQueryTests : IDisposable
         Assert.Equal("Bob", results[0].Name);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WithTupleParams_ReturnsResults()
+    {
+        var results = await new FilterCustomers()
+            .WithLiteral("sortColumn", "Name")
+            .ExecuteAsync(_db, ("region", "West"));
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal("Alice", results[0].Name);
+        Assert.Equal("Charlie", results[1].Name);
+    }
+
     public void Dispose()
     {
         _db.Dispose();

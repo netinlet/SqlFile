@@ -49,6 +49,16 @@ public abstract class SqlQuery<T>
             .Distinct()
             .ToList();
 
+    public Task<List<T>> ExecuteAsync(DbContext db)
+        => ExecuteAsync(db, Array.Empty<object>());
+
+    public Task<List<T>> ExecuteAsync(DbContext db, params (string name, object value)[] parameters)
+    {
+        foreach (var (name, value) in parameters)
+            _params[name] = value;
+        return ExecuteAsync(db, Array.Empty<object>());
+    }
+
     public async Task<List<T>> ExecuteAsync(DbContext db, params object[] parameters)
     {
         var sql = SqlCache.Cache.GetOrAdd(GetType(), LoadSqlFromResource);
