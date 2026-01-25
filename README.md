@@ -71,6 +71,25 @@ var customers = await new FilterCustomers()
 
 `WithParam` values are converted to proper SQL parameters (`@p0`, `@p1`, etc.), protecting against SQL injection.
 
+## Inline Parameter Syntax
+
+For simpler cases, pass parameters directly to `ExecuteAsync` using tuple syntax:
+
+```csharp
+var customers = await new FilterCustomers()
+    .ExecuteAsync(dbContext, ("region", userInput), ("status", "Active"));
+```
+
+This is equivalent to chaining `WithParam` calls but more concise for straightforward queries.
+
+Combine with `WithLiteral` for mixed structural/value queries:
+
+```csharp
+var customers = await new DynamicSearch()
+    .WithLiteral("sortColumn", "Name DESC")
+    .ExecuteAsync(dbContext, ("region", userInput));
+```
+
 ## Literal Substitution (Structural)
 
 Use `WithLiteral` for structural SQL parts that cannot be parameterized (column names, sort orders, complex expressions):
@@ -169,3 +188,4 @@ Queries/
 | `WithLiterals(IEnumerable<KeyValuePair<string, string>>)` | Set multiple literal values. Returns `this` for chaining. |
 | `TemplateFields` | `IReadOnlyList<string>` of placeholder names found in the SQL file. |
 | `ExecuteAsync(DbContext db, params object[] parameters)` | Execute the query and return `List<T>`. Positional parameters use EF Core's `{0}`, `{1}` syntax. |
+| `ExecuteAsync(DbContext db, params (string, object)[] parameters)` | Execute with inline named parameters. Parameters are SQL-injection safe. |
